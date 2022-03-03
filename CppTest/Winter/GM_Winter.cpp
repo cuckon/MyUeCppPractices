@@ -83,9 +83,9 @@ void AGM_Winter::StartPlay()
     UKismetRenderingLibrary::ClearRenderTarget2D(
         m_World, RT_MovedDrops, FLinearColor(0.0f, 0.0f, 0.0f, 0.0f)
     );
-    m_M_BrushInstance = UKismetMaterialLibrary::CreateDynamicMaterialInstance(
-        m_World, M_Brush
-    );
+    // m_M_BrushInstance = UKismetMaterialLibrary::CreateDynamicMaterialInstance(
+    //    m_World, M_Brush
+    // );
     APawn* pawn = UGameplayStatics::GetPlayerPawn(m_World, 0);
     pawn->SetActorLocation(kPawnPos);
 }
@@ -151,7 +151,7 @@ TSet<int> AGM_Winter::SimDrops(float DeltaSeconds)
 {
     TSet<int> MovedIDs = m_DropSystem.Simulate(DeltaSeconds);
     MovedIDs = m_DropSystem.Clip(m_RenderTargetSize, MovedIDs);
-    m_DropSystem.SplitTrailDrops();
+    m_DropSystem.SplitTrailDrops(DeltaSeconds);
     return MovedIDs;
 }
 
@@ -200,8 +200,9 @@ void AGM_Winter::OnMouseMove(const FVector2D& FingerPos)
         );
         Size2D_RT = FVector2D(kFingerSizeRT, kFingerSizeRT * m_ViewportRatio);
         ScreenPos = DrawPos_RTSpace - Size2D_RT * 0.5;
+
         Canvas->K2_DrawMaterial(
-            m_M_BrushInstance, ScreenPos, Size2D_RT, FVector2D(0.0, 0.0)
+            M_Brush, ScreenPos, Size2D_RT, FVector2D(0.0, 0.0)
         );
 
         m_DropSystem.Kill(DrawPos_RTSpace, kFingerSizeRT * 0.5);

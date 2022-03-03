@@ -66,12 +66,12 @@ TSet<int> DropSystem::Simulate(float TimeDeltaSeconds)
 void DropSystem::Kill(const FVector2D& Center, float Radius)
 {
     // Store keys before hands to avoid removal during iteration
-    TArray<int> Keys;
-    m_Drops.GetKeys(Keys);
+    TArray<int> IDs;
+    m_Drops.GetKeys(IDs);
 
     Drop* CurrentDrop;
     float Distance, Threshold;
-    for (auto& ID : Keys)
+    for (auto& ID : IDs)
     {
         CurrentDrop = m_Drops[ID];
         if (!CurrentDrop->IsActive())
@@ -84,16 +84,19 @@ void DropSystem::Kill(const FVector2D& Center, float Radius)
         Kill(ID);
     }
 }
-void DropSystem::SplitTrailDrops()
+void DropSystem::SplitTrailDrops(float DeltaSeconds)
 {
+    TSet<int> IDs;
+    m_Drops.GetKeys(IDs);
+
     Drop* CurrentDropPtr;
-    for (auto Iter : m_Drops) {
-        CurrentDropPtr = Iter.Value;
+    for (auto ID : IDs) {
+        CurrentDropPtr = m_Drops[ID];
         if (CurrentDropPtr->Velocity.Size() < m_SplitTrailVelocityThreshold)
             continue;
         if (!CurrentDropPtr->IsActive())
             continue;
-        if (FMath::RandRange(0.0f, 1.0f) > kSplitChance)
+        if (FMath::RandRange(0.0f, 1.0f) > kSplitChance / DeltaSeconds)
             continue;
 
         float Radius = FMath::GetMappedRangeValueUnclamped(
@@ -119,10 +122,14 @@ void DropSystem::SplitTrailDrops()
 */
 TSet<int> DropSystem::Clip(const FVector2D& Size, const TSet<int>& MovedIDs)
 {
-    TSet<int> RemainingIDs(MovedIDs);
+    TArray<int> IDs;
+    m_Drops.GetKeys(IDs);
+
+    TSet<int> RemainingIDs;
     FVector2D Position;
     float Radius;
-    for (auto& ID : MovedIDs)
+
+    for (auto& ID : IDs)
     {
         Position = m_Drops[ID]->Position;
         Radius = m_Drops[ID]->Radius;
@@ -132,8 +139,9 @@ TSet<int> DropSystem::Clip(const FVector2D& Size, const TSet<int>& MovedIDs)
             )
         {
             Kill(ID);
-            RemainingIDs.Remove(ID);
-            UE_LOG(LogTemp, Log, TEXT("Killed: %i"), ID);
+        }
+        else if (MovedIDs.Contains(ID)) {
+            RemainingIDs.Add(ID);
         }
     }
     return RemainingIDs;

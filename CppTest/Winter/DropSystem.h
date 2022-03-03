@@ -19,7 +19,7 @@ public:
     );
     void Activate(const FVector2D& Center, float Radius);
     void Kill(const FVector2D& Center, float Radius);
-    void SplitTrailDrops();
+    void SplitTrailDrops(float DeltaSeconds);
     TSet<int> Clip(const FVector2D& Size, const TSet<int>& MovedIDs);
 
     TMap<int, Drop*> m_Drops;
