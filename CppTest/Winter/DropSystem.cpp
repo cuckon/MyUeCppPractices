@@ -8,8 +8,8 @@
 
 PRAGMA_OPTION
 
-const float kRadiusAnimationExp = 14.0f;
-const float kSplitChance = 50.0f;
+const float kRadiusAnimationExp = 10.0f;
+const float kSplitChance = 15.0f;
 const float kAreaLossFactor = 0.5f;
 const float kVelocityLossFactor = 0.5f;
 
@@ -95,22 +95,22 @@ inline float GetChanceFrame(float ChanceSecond, float DeltaSeconds) {
     return ChanceSecond * DeltaSeconds;
 }
 
-void DropSystem::SplitTrailDrops(float DeltaSeconds)
+void DropSystem::SplitTrailDrops(float DeltaSeconds, const TSet<int>& MovedIDs)
 {
-    TSet<int> IDs;
-    m_Drops.GetKeys(IDs);
-
     Drop* CurrentDropPtr;
     float ChanceFrame = GetChanceFrame(kSplitChance, DeltaSeconds);
-    float Velocity;
-    for (auto ID : IDs) {
+    float Speed;
+    float SpeedFactor;
+    for (auto ID : MovedIDs) {
         CurrentDropPtr = m_Drops[ID];
-        Velocity = CurrentDropPtr->Velocity.Size();
-        if (Velocity < m_SplitTrailVelocityThreshold)
+        Speed = CurrentDropPtr->Velocity.Size() * m_VelocityScale;
+        if (Speed < m_SplitTrailVelocityThreshold)
             continue;
         if (!CurrentDropPtr->IsActive())
             continue;
-        if (FMath::RandRange(0.0f, 1.0f) > ChanceFrame)
+        SpeedFactor = Speed / m_SplitTrailVelocityThreshold / 10;
+
+        if (FMath::RandRange(0.0f, 1.0f) > (ChanceFrame * SpeedFactor))
             continue;
 
         float Radius = FMath::GetMappedRangeValueUnclamped(
@@ -126,14 +126,6 @@ void DropSystem::SplitTrailDrops(float DeltaSeconds)
             kBirthTimeOutsideOfFinger
         );
 
-       /* UE_LOG(LogTemp, Log, TEXT("%f -> %f + %f"),
-            CurrentDropPtr->Radius,
-            Radius,
-            FMath::Sqrt(
-                CurrentDropPtr->Radius * CurrentDropPtr->Radius - Radius * Radius 
-            )
-        );*/
-
         // Make area conservative
         CurrentDropPtr->Radius = FMath::Sqrt(
             CurrentDropPtr->Radius * CurrentDropPtr->Radius - Radius * Radius * kAreaLossFactor
@@ -146,8 +138,8 @@ TSet<int> DropSystem::Tick(float DeltaSeconds, const FVector2D& ClipSize)
 {
     TSet<int> MovedIDs = Simulate(DeltaSeconds);
     MovedIDs = Clip(ClipSize, MovedIDs);
-    SplitTrailDrops(DeltaSeconds);
-    ProcessOverlaps();
+    SplitTrailDrops(DeltaSeconds, MovedIDs);
+    ProcessOverlaps(MovedIDs);
     return MovedIDs;
 }
 
@@ -181,19 +173,26 @@ TSet<int> DropSystem::Clip(const FVector2D& Size, const TSet<int>& MovedIDs)
     return RemainingIDs;
 }
 
-void DropSystem::ProcessOverlaps()
+void DropSystem::ProcessOverlaps(const TSet<int>& MovedIDs)
 {
     TArray<IDPair> IDPairs;
     TArray<int> IDs;
     m_Drops.GetKeys(IDs);
 
-    for (int i = 0; i < IDs.Num(); ++i) {
-        for (int j = i + 1; j < IDs.Num(); ++j) {
-            if (m_Drops[IDs[i]]->AreOverlapped(m_Drops[IDs[j]])) {
-                IDPairs.Add(std::make_pair(IDs[i], IDs[j]));
+    for (auto i : MovedIDs) {
+        for (auto j : IDs) {
+            if (i == j) continue;
+            if (MovedIDs.Contains(j) && i > j) continue;
+
+            if (m_Drops[i]->AreOverlapped(m_Drops[j])) {
+                IDPairs.Add(std::make_pair(i, j));
             }
         }
     }
+
+    if (IDPairs.Num())
+        UE_LOG(LogTemp, Log, TEXT("Overlap: %i"), IDPairs.Num());
+
     ActiveTrailDrops(IDPairs);
     MergeDrops(IDPairs);
 }
@@ -217,6 +216,10 @@ void DropSystem::ActiveTrailDrops(const TArray<IDPair>& OverlappedPairs)
 
 void DropSystem::MergeDrops(const TArray<IDPair>& OverlappedPairs)
 {
+    /*for (auto CurrentPair : OverlappedPairs) {
+        SeparateDrops.Remove(CurrentPair.first);
+        SeparateDrops.Remove(CurrentPair.second);
+    }*/
 }
 
 void DropSystem::Draw(

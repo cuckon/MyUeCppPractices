@@ -26,16 +26,16 @@ public:
     UWorld* m_World;
     float m_Gravity = 10.0;
     float m_StaticFriction = 450.0;     // Force that imposed on drops
-    float m_DynamicFriction = 350.0;
+    float m_DynamicFriction = 450.0;
     float m_Density = 25.0;
-    float m_VelocityScale = 1.0;
-    float m_SplitTrailVelocityThreshold = 100.0f;
+    float m_VelocityScale = 10.0;
+    float m_SplitTrailVelocityThreshold = 50.0f;
 
 private:
-    void SplitTrailDrops(float DeltaSeconds);
+    void SplitTrailDrops(float DeltaSeconds, const TSet<int>& MovedIDs);
     TSet<int> Clip(const FVector2D& Size, const TSet<int>& MovedIDs);
     TSet<int> Simulate(float TimeDeltaSeconds);
-    void ProcessOverlaps();
+    void ProcessOverlaps(const TSet<int>& MovedIDs);
     void ActiveTrailDrops(const TArray<IDPair>& OverlappedPairs);
     void MergeDrops(const TArray<IDPair>& OverlappedPairs);
 
