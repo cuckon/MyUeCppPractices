@@ -3,6 +3,7 @@
 
 #include "Drop.h"
 
+typedef std::pair<int, int> IDPair;
 
 class DropSystem
 {
@@ -12,16 +13,13 @@ public:
 
     template<class... Types> Drop* Emit(Types... Args);
     void Kill(int ID);
-    TSet<int> Simulate(float TimeDeltaSeconds);
     void Draw(UTextureRenderTarget2D* RT_Drops,
         UTextureRenderTarget2D* RT_MovedDrops, UTexture* T_Raindrop,
         float ViewPortRatio, const TSet<int>& MovedIDs
     );
-    void Activate(const FVector2D& Center, float Radius);
+    void MarkDropsOutsideFinger(const FVector2D& Center, float Radius);
     void Kill(const FVector2D& Center, float Radius);
-    void SplitTrailDrops(float DeltaSeconds);
-    //void Radius
-    TSet<int> Clip(const FVector2D& Size, const TSet<int>& MovedIDs);
+    TSet<int> Tick(float TimeDeltaSeconds, const FVector2D& ClipSize);
 
     TMap<int, Drop*> m_Drops;
     float m_RadiusRenderFactor = 10.0f;
@@ -31,9 +29,16 @@ public:
     float m_DynamicFriction = 350.0;
     float m_Density = 25.0;
     float m_VelocityScale = 1.0;
-    float m_SplitTrailVelocityThreshold = 300.0f;
+    float m_SplitTrailVelocityThreshold = 100.0f;
 
 private:
+    void SplitTrailDrops(float DeltaSeconds);
+    TSet<int> Clip(const FVector2D& Size, const TSet<int>& MovedIDs);
+    TSet<int> Simulate(float TimeDeltaSeconds);
+    void ProcessOverlaps();
+    void ActiveTrailDrops(const TArray<IDPair>& OverlappedPairs);
+    void MergeDrops(const TArray<IDPair>& OverlappedPairs);
+
     int m_NextID = 0;
 };
 

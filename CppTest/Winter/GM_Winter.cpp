@@ -149,10 +149,7 @@ void AGM_Winter::OnStrokeEnd()
 
 TSet<int> AGM_Winter::SimDrops(float DeltaSeconds)
 {
-    TSet<int> MovedIDs = m_DropSystem.Simulate(DeltaSeconds);
-    MovedIDs = m_DropSystem.Clip(m_RenderTargetSize, MovedIDs);
-    m_DropSystem.SplitTrailDrops(DeltaSeconds);
-    return MovedIDs;
+    return m_DropSystem.Tick(DeltaSeconds, m_RenderTargetSize);
 }
 
 
@@ -219,10 +216,12 @@ void AGM_Winter::OnMouseMove(const FVector2D& FingerPos)
 */
 void AGM_Winter::ActivateDrops(const FVector2D& Center, float Radius)
 {
-    m_DropSystem.Activate(Center, Radius);
+    m_DropSystem.MarkDropsOutsideFinger(Center, Radius);
 }
 
-void AGM_Winter::EmitDrop(const FVector2D& Pos_RT, float Chance, float RadiusMin, float RadiusMax, float RadiusExp)
+void AGM_Winter::EmitDrop(
+    const FVector2D& Pos_RT, float Chance, float RadiusMin, float RadiusMax, float RadiusExp
+)
 {
     float Dice = FMath::RandRange(0.0f, 1.0f);
     if (Dice >= Chance)
@@ -233,7 +232,9 @@ void AGM_Winter::EmitDrop(const FVector2D& Pos_RT, float Chance, float RadiusMin
         FMath::Pow(FMath::RandRange(0.0f, 1.0f), RadiusExp)
     );
 
-    m_DropSystem.Emit(Pos_RT, FVector2D(0.0, 0.0), FVector2D(0.0, 0.0), Radius);
+    m_DropSystem.Emit(
+        Pos_RT, FVector2D(0.0, 0.0), FVector2D(0.0, 0.0), Radius, kBirthTimeNotInitialized
+    );
 }
 
 void AGM_Winter::CleanDropsAtPos(const FVector2D& Pos_RT, float Size)

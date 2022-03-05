@@ -4,11 +4,13 @@
 
 #include <Kismet/KismetRenderingLibrary.h>
 #include <Engine/Canvas.h>
+#include <utility>
 
 PRAGMA_OPTION
 
 const float kRadiusAnimationExp = 14.0f;
 const float kSplitChance = 50.0f;
+
 
 DropSystem::DropSystem():m_World(nullptr), m_NextID(0)
 {
@@ -118,7 +120,8 @@ void DropSystem::SplitTrailDrops(float DeltaSeconds)
             CurrentDropPtr->Position,
             FVector2D(0.0, 0.0),
             FVector2D(1.0, 2.0),
-            Radius
+            Radius,
+            kBirthTimeOutsideOfFinger
         );
 
         // Make area conservative
@@ -127,6 +130,16 @@ void DropSystem::SplitTrailDrops(float DeltaSeconds)
         );
     }
 }
+
+TSet<int> DropSystem::Tick(float DeltaSeconds, const FVector2D& ClipSize)
+{
+    TSet<int> MovedIDs = Simulate(DeltaSeconds);
+    MovedIDs = Clip(ClipSize, MovedIDs);
+    SplitTrailDrops(DeltaSeconds);
+    ProcessOverlaps();
+    return MovedIDs;
+}
+
 /* 
 * @param OutMovedIDs - Will be iterated and changed.
 */
@@ -155,6 +168,44 @@ TSet<int> DropSystem::Clip(const FVector2D& Size, const TSet<int>& MovedIDs)
         }
     }
     return RemainingIDs;
+}
+
+void DropSystem::ProcessOverlaps()
+{
+    TArray<IDPair> IDPairs;
+    TArray<int> IDs;
+    m_Drops.GetKeys(IDs);
+
+    for (int i = 0; i < IDs.Num(); ++i) {
+        for (int j = i + 1; j < IDs.Num(); ++j) {
+            if (m_Drops[IDs[i]]->AreOverlapped(m_Drops[IDs[j]])) {
+                IDPairs.Add(std::make_pair(IDs[i], IDs[j]));
+            }
+        }
+    }
+    ActiveTrailDrops(IDPairs);
+    MergeDrops(IDPairs);
+}
+
+void DropSystem::ActiveTrailDrops(const TArray<IDPair>& OverlappedPairs)
+{
+
+    TSet<int> SeparateDrops;
+    m_Drops.GetKeys(SeparateDrops);
+
+    for (auto CurrentPair : OverlappedPairs) {
+        SeparateDrops.Remove(CurrentPair.first);
+        SeparateDrops.Remove(CurrentPair.second);
+    }
+
+    for (auto ID : SeparateDrops) {
+        if (m_Drops[ID]->BirthTimeSeconds == kBirthTimeOutsideOfFinger)
+            m_Drops[ID]->BirthTimeSeconds = m_World->GetTimeSeconds();
+    }
+}
+
+void DropSystem::MergeDrops(const TArray<IDPair>& OverlappedPairs)
+{
 }
 
 void DropSystem::Draw(
@@ -231,7 +282,7 @@ void DropSystem::Draw(
     UKismetRenderingLibrary::EndDrawCanvasToRenderTarget(m_World, Context);
 }
 
-void DropSystem::Activate(const FVector2D& Center, float Radius)
+void DropSystem::MarkDropsOutsideFinger(const FVector2D& Center, float Radius)
 {
     Drop* CurrentDrop;
     float Distance, Threshold;
@@ -245,6 +296,6 @@ void DropSystem::Activate(const FVector2D& Center, float Radius)
         Threshold = Radius + CurrentDrop->Radius;
         if (Distance < Threshold)
             continue;
-        CurrentDrop->BirthTimeSeconds = m_World->GetTimeSeconds();
+        CurrentDrop->BirthTimeSeconds = kBirthTimeOutsideOfFinger;
     }
 }
