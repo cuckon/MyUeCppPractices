@@ -20,6 +20,7 @@ public:
     void Activate(const FVector2D& Center, float Radius);
     void Kill(const FVector2D& Center, float Radius);
     void SplitTrailDrops(float DeltaSeconds);
+    //void Radius
     TSet<int> Clip(const FVector2D& Size, const TSet<int>& MovedIDs);
 
     TMap<int, Drop*> m_Drops;
@@ -27,10 +28,10 @@ public:
     UWorld* m_World;
     float m_Gravity = 10.0;
     float m_StaticFriction = 450.0;     // Force that imposed on drops
-    float m_DynamicFriction = 1.0;
+    float m_DynamicFriction = 350.0;
     float m_Density = 25.0;
     float m_VelocityScale = 1.0;
-    float m_SplitTrailVelocityThreshold = 30.0f;
+    float m_SplitTrailVelocityThreshold = 300.0f;
 
 private:
     int m_NextID = 0;

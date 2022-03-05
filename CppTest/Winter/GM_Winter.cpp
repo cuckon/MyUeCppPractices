@@ -1,4 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
+#include "Winter/GM_Winter.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Canvas.h"
@@ -6,7 +7,6 @@
 #include "Kismet/KismetRenderingLibrary.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 
-#include "Winter/GM_Winter.h"
 #include "Common.h"
 
 PRAGMA_OPTION

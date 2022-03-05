@@ -11,6 +11,7 @@ public:
     FVector2D Stretch;
     float Radius;
     float BirthTimeSeconds;
+    // bool Mergeable
 
     Drop(const FVector2D &Position, const FVector2D& Velocity, const FVector2D& Stretch,
         float Radius=1.0f, float BirthTimeSeconds=kBirthTimeNotInitialized)

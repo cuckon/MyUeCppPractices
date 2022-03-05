@@ -8,7 +8,7 @@
 PRAGMA_OPTION
 
 const float kRadiusAnimationExp = 14.0f;
-const float kSplitChance = 0.1f;
+const float kSplitChance = 50.0f;
 
 DropSystem::DropSystem():m_World(nullptr), m_NextID(0)
 {
@@ -84,19 +84,29 @@ void DropSystem::Kill(const FVector2D& Center, float Radius)
         Kill(ID);
     }
 }
+
+inline float GetChanceFrame(float ChanceSecond, float DeltaSeconds) {
+    if (ChanceSecond < 1)
+        return 1 - FMath::Pow(1 - ChanceSecond, DeltaSeconds);
+    return ChanceSecond * DeltaSeconds;
+}
+
 void DropSystem::SplitTrailDrops(float DeltaSeconds)
 {
     TSet<int> IDs;
     m_Drops.GetKeys(IDs);
 
     Drop* CurrentDropPtr;
+    float ChanceFrame = GetChanceFrame(kSplitChance, DeltaSeconds);
+    float Velocity;
     for (auto ID : IDs) {
         CurrentDropPtr = m_Drops[ID];
-        if (CurrentDropPtr->Velocity.Size() < m_SplitTrailVelocityThreshold)
+        Velocity = CurrentDropPtr->Velocity.Size();
+        if (Velocity < m_SplitTrailVelocityThreshold)
             continue;
         if (!CurrentDropPtr->IsActive())
             continue;
-        if (FMath::RandRange(0.0f, 1.0f) > kSplitChance / DeltaSeconds)
+        if (FMath::RandRange(0.0f, 1.0f) > ChanceFrame)
             continue;
 
         float Radius = FMath::GetMappedRangeValueUnclamped(
