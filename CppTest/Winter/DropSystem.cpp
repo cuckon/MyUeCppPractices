@@ -10,6 +10,8 @@ PRAGMA_OPTION
 
 const float kRadiusAnimationExp = 14.0f;
 const float kSplitChance = 50.0f;
+const float kAreaLossFactor = 0.5f;
+const float kVelocityLossFactor = 0.5f;
 
 
 DropSystem::DropSystem():m_World(nullptr), m_NextID(0)
@@ -124,10 +126,19 @@ void DropSystem::SplitTrailDrops(float DeltaSeconds)
             kBirthTimeOutsideOfFinger
         );
 
+       /* UE_LOG(LogTemp, Log, TEXT("%f -> %f + %f"),
+            CurrentDropPtr->Radius,
+            Radius,
+            FMath::Sqrt(
+                CurrentDropPtr->Radius * CurrentDropPtr->Radius - Radius * Radius 
+            )
+        );*/
+
         // Make area conservative
         CurrentDropPtr->Radius = FMath::Sqrt(
-            CurrentDropPtr->Radius * CurrentDropPtr->Radius - Radius * Radius
+            CurrentDropPtr->Radius * CurrentDropPtr->Radius - Radius * Radius * kAreaLossFactor
         );
+        CurrentDropPtr->Velocity *= kVelocityLossFactor;
     }
 }
 
