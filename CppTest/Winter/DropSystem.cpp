@@ -10,10 +10,10 @@ PRAGMA_OPTION
 
 const float kRadiusAnimationExp = 10.0f;
 const float kAreaLossFactor = 0.35f;     // Bigger value causes more area loss 
-const float kVelocityLossFactor = 0.5f;
-const float kAreaIncreaseFactorMin = 0.001f;    // Bigger value increase the growing speed of marching drops.
-const float kAreaIncreaseFactorMax = 0.0085f;
-const float kAreaIncreaseFactorExp = 10.0f;
+const float kVelocityLossFactor = 0.85f;
+const float kAreaIncreaseFactorMin = 0.015f;    // Bigger value increase the growing speed of marching drops.
+const float kAreaIncreaseFactorMax = 0.35f;
+const float kAreaIncreaseFactorExp = 6.0f;
 
 DropSystem::DropSystem():m_World(nullptr), m_NextID(0)
 {
@@ -120,7 +120,7 @@ void DropSystem::SplitTrailDrops(float DeltaSeconds, const TSet<int>& MovedIDs)
 
         float Radius = CurrentDropPtr->Radius * FMath::RandRange(0.3f, 0.5f);
         Position = CurrentDropPtr->Position + FVector2D(
-            FMath::RandRange(-0.3f, 0.3f), -0.4 
+            FMath::RandRange(-0.2f, 0.2f), -0.4 
         ) * CurrentDropPtr->Radius;
         Emit(
             Position,
@@ -252,8 +252,8 @@ void DropSystem::Draw(
     UCanvas* Canvas;
     FVector2D CanvasSize;
     FDrawToRenderTargetContext Context;
-    TMap<int, FVector2D> CachedSizes;
-    TMap<int, FVector2D> CachedPositions;
+    TMap<int, FVector2D> RadiusCached;
+    TMap<int, FVector2D> PositionCached;
 
     // Draw Drops
     UKismetRenderingLibrary::BeginDrawCanvasToRenderTarget(
@@ -262,7 +262,7 @@ void DropSystem::Draw(
 
     Drop* CurrentDrop;
     float NormalLife, Radius;
-    FVector2D Radius2D, Position;
+    FVector2D Size2D, Position;
     for (auto& Iter : m_Drops) {
         CurrentDrop = Iter.Value;
         if (!CurrentDrop->IsActive())
@@ -274,19 +274,19 @@ void DropSystem::Draw(
         NormalLife = FMath::Pow(1 - NormalLife, kRadiusAnimationExp);
         Radius = (NormalLife * 0.7 + 1.0) * CurrentDrop->Radius;
         Radius *= m_RadiusRenderFactor;
-        Radius2D = FVector2D(Radius, Radius * ViewPortRatio);
-        Position = CurrentDrop->Position - Radius2D * 0.5;
+        Size2D = FVector2D(Radius, Radius * ViewPortRatio) * 2;
+        Position = CurrentDrop->Position - Size2D * 0.5;
         Canvas->K2_DrawTexture(
             T_Raindrop,
             Position,
-            Radius2D,
+            Size2D,
             FVector2D::ZeroVector,  // CoordinatePosition
             FVector2D::UnitVector,  // CoordinateSize
             FLinearColor::White,    // RenderColor
             BLEND_AlphaComposite   //BlendMode;
         );
-        CachedPositions.Add(Iter.Key, Position);
-        CachedSizes.Add(Iter.Key, Radius2D);
+        PositionCached.Add(Iter.Key, Position);
+        RadiusCached.Add(Iter.Key, Size2D);
 
     }
     UKismetRenderingLibrary::EndDrawCanvasToRenderTarget(m_World, Context);
@@ -300,10 +300,12 @@ void DropSystem::Draw(
         if (!m_Drops[ID]->IsActive())
             continue;
 
+        Size2D = FVector2D(m_Drops[ID]->Radius, m_Drops[ID]->Radius * ViewPortRatio) * 2;
+        Position = m_Drops[ID]->Position - Size2D * 0.5;
+
         Canvas->K2_DrawTexture(
             T_Raindrop,
-            CachedPositions[ID],
-            CachedSizes[ID],
+            Position, Size2D,
             FVector2D::ZeroVector,  // CoordinatePosition
             FVector2D::UnitVector,  // CoordinateSize
             FLinearColor::White,    // RenderColor

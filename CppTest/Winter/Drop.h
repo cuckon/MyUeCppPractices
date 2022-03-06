@@ -3,7 +3,7 @@
 
 const float kBirthTimeNotInitialized = -2.0f;
 const float kBirthTimeOutsideOfFinger = -1.0f;   // Outside of finger tip, ready to be active
-const float kDensity = 25.0f;
+const float kDensity = .75f;
 
 class Drop
 {
@@ -28,7 +28,7 @@ public:
     };
 
     bool AreOverlapped(Drop* Another) {
-        return (Another->Position - Position).Size() <= (Another->Radius + Radius);
+        return (Another->Position - Position).Size() <= (Another->Radius + Radius) * 0.55;
     }
 
     void ResetTrailDistance() {

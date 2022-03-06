@@ -22,11 +22,11 @@ public:
     TSet<int> Tick(float TimeDeltaSeconds, const FVector2D& ClipSize);
 
     TMap<int, Drop*> m_Drops;
-    float m_RadiusRenderFactor = 10.0f;
+    float m_RadiusRenderFactor = 1.0f;  // For compensating the texture alpha margin
     UWorld* m_World;
     float m_Gravity = 10.0;
     float m_StaticFriction = 450.0;     // Force that imposed on drops
-    float m_DynamicFriction = 450.0;
+    float m_DynamicFriction = 430.0;
     float m_VelocityScale = 30.0;
     float m_SplitTrailVelocityThreshold = 50.0f;
 

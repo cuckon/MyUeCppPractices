@@ -203,7 +203,8 @@ void AGM_Winter::OnMouseMove(const FVector2D& FingerPos)
             M_Brush, ScreenPos, Size2D_RT, FVector2D(0.0, 0.0)
         );
 
-        m_DropSystem.Kill(DrawPos_RTSpace, kFingerSizeRT * 0.5);
+        const float ContactFactor = 0.55;
+        m_DropSystem.Kill(DrawPos_RTSpace, kFingerSizeRT * 0.5 * ContactFactor);
     }
 
     UKismetRenderingLibrary::EndDrawCanvasToRenderTarget(m_World, Context);
