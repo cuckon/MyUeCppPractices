@@ -9,11 +9,14 @@
 PRAGMA_OPTION
 
 const float kRadiusAnimationExp = 10.0f;
-const float kAreaLossFactor = 0.35f;     // Bigger value causes more area loss 
+const float kAreaLossFactor = 0.35f;     // Bigger value causes more area loss when splitting
+const float kAreaGainFactor = 0.5;      // Bigger value make drops grow faster when merging with others
 const float kVelocityLossFactor = 0.85f;
 const float kAreaIncreaseFactorMin = 0.015f;    // Bigger value increase the growing speed of marching drops.
 const float kAreaIncreaseFactorMax = 0.35f;
 const float kAreaIncreaseFactorExp = 6.0f;
+const float kStretchVelocityFactor = 0.1f;
+
 
 DropSystem::DropSystem():m_World(nullptr), m_NextID(0)
 {
@@ -125,7 +128,7 @@ void DropSystem::SplitTrailDrops(float DeltaSeconds, const TSet<int>& MovedIDs)
         Emit(
             Position,
             FVector2D(0.0, 0.0),
-            FVector2D(1.0, 2.0),
+            FVector2D::UnitVector + FVector2D(0.2, CurrentDropPtr->Velocity.Y * kStretchVelocityFactor),
             Radius,
             kBirthTimeOutsideOfFinger
         );
@@ -233,7 +236,7 @@ void DropSystem::MergeDrop(int ID1, int ID2)
         std::swap(ID1, ID2);
     
     float MassOld = m_Drops[ID1]->GetMass();
-    m_Drops[ID1]->AdjustArea(m_Drops[ID2]->Radius * m_Drops[ID2]->Radius);
+    m_Drops[ID1]->AdjustArea(m_Drops[ID2]->Radius * m_Drops[ID2]->Radius * kAreaGainFactor);
     m_Drops[ID1]->Velocity *= MassOld / m_Drops[ID1]->GetMass();
 
     Kill(ID2);
@@ -251,6 +254,7 @@ void DropSystem::Draw(
 
     UCanvas* Canvas;
     FVector2D CanvasSize;
+    FVector2D StretchFactor;
     FDrawToRenderTargetContext Context;
     TMap<int, FVector2D> RadiusCached;
     TMap<int, FVector2D> PositionCached;
@@ -261,7 +265,7 @@ void DropSystem::Draw(
     );
 
     Drop* CurrentDrop;
-    float NormalLife, Radius;
+    float NormalLife, Radius, MappedLife;
     FVector2D Size2D, Position;
     for (auto& Iter : m_Drops) {
         CurrentDrop = Iter.Value;
@@ -270,11 +274,15 @@ void DropSystem::Draw(
         NormalLife = FMath::Clamp(
             CurrentTime - CurrentDrop->BirthTimeSeconds,
             0.0f, 1.0f
-        );
-        NormalLife = FMath::Pow(1 - NormalLife, kRadiusAnimationExp);
-        Radius = (NormalLife * 0.7 + 1.0) * CurrentDrop->Radius;
+        ); // From 0 to 1
+
+        // From 1 to 0
+        MappedLife = FMath::Pow(1 - NormalLife, kRadiusAnimationExp);
+
+        StretchFactor = FMath::Lerp(FVector2D::UnitVector, CurrentDrop->Stretch, MappedLife);
+        Radius = (MappedLife * 0.7 + 1.0) * CurrentDrop->Radius;
         Radius *= m_RadiusRenderFactor;
-        Size2D = FVector2D(Radius, Radius * ViewPortRatio) * 2;
+        Size2D = FVector2D(Radius, Radius * ViewPortRatio) * 2 * StretchFactor;
         Position = CurrentDrop->Position - Size2D * 0.5;
         Canvas->K2_DrawTexture(
             T_Raindrop,

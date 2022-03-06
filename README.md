@@ -8,10 +8,11 @@ TODO:
 
 - [x] Smear effect.
 - [x] Trails of dripping drops.
-- [ ] Drops get merged when overlap.
-- [ ] Bugfix: Noncontinuous strokes when slow.
+- [x] Drops get merged when overlap.
+- [x] Bugfix: Noncontinuous strokes when slow.
 - [x] Growing size when dripping down.
-- [ ] Stretch effect.
+- [x] Stretch effect.
 
 And might be done if I get time:
 - [ ] Grid based overlap detection.
+- [ ] Transparency control of drops.

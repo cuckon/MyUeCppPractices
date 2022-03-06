@@ -27,7 +27,7 @@ public:
     float m_Gravity = 10.0;
     float m_StaticFriction = 450.0;     // Force that imposed on drops
     float m_DynamicFriction = 430.0;
-    float m_VelocityScale = 30.0;
+    float m_VelocityScale = 20.0;
     float m_SplitTrailVelocityThreshold = 50.0f;
 
 private:
