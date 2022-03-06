@@ -3,6 +3,7 @@
 
 const float kBirthTimeNotInitialized = -2.0f;
 const float kBirthTimeOutsideOfFinger = -1.0f;   // Outside of finger tip, ready to be active
+const float kDensity = 25.0f;
 
 class Drop
 {
@@ -41,6 +42,14 @@ public:
 
     bool IsOutsideOfFinger() const {
         return BirthTimeSeconds >= kBirthTimeOutsideOfFinger;
+    }
+
+    float GetMass() const {
+        return Radius * Radius * kDensity;
+    }
+
+    void AdjustArea(float Delta) {
+        Radius = FMath::Sqrt( Radius * Radius + Delta);
     }
 };
 

@@ -107,11 +107,11 @@ void AGM_Winter::Tick(float DeltaSeconds)
         bool MovedFarEnough = FVector2D::Distance(CurrentFingerPos, m_LastPosition) > kMoveThreshold;
         if (MovedFarEnough || m_JustPressed) {
             OnMouseMove(CurrentFingerPos);
+            m_LastPosition = CurrentFingerPos;
         }
     }
 
     m_JustPressed = false;
-    m_LastPosition = CurrentFingerPos;
 
     TSet<int> MovedIDs = SimDrops(DeltaSeconds);
     DrawDrops(MovedIDs);
@@ -138,7 +138,8 @@ void AGM_Winter::FingerReleased()
 
 void AGM_Winter::OnStrokeEnd()
 {
-    FVector2D Pos_RT = m_LastPosition * m_RenderTargetSize * m_ViewFactor;
+    FVector2D Pos = UWidgetLayoutLibrary::GetMousePositionOnViewport(m_World);
+    FVector2D Pos_RT = Pos * m_RenderTargetSize * m_ViewFactor;
     EmitDrop(
         Pos_RT, kDropEmitChanceStrokeEnd,
         kDropEmitRadiusMinStrokeEnd, kDropEmitRadiusMaxStrokeEnd,

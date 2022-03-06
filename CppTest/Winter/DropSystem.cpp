@@ -9,10 +9,10 @@
 PRAGMA_OPTION
 
 const float kRadiusAnimationExp = 10.0f;
-const float kAreaLossFactor = 0.2f;     // Bigger value causes more area loss 
+const float kAreaLossFactor = 0.35f;     // Bigger value causes more area loss 
 const float kVelocityLossFactor = 0.5f;
-const float kAreaIncreaseFactorMin = 0.02f;    // Bigger value increase the growing speed of marching drops.
-const float kAreaIncreaseFactorMax = 0.06f;
+const float kAreaIncreaseFactorMin = 0.001f;    // Bigger value increase the growing speed of marching drops.
+const float kAreaIncreaseFactorMax = 0.0085f;
 const float kAreaIncreaseFactorExp = 10.0f;
 
 DropSystem::DropSystem():m_World(nullptr), m_NextID(0)
@@ -40,7 +40,6 @@ void DropSystem::Kill(int ID)
 
 TSet<int> DropSystem::Simulate(float TimeDeltaSeconds)
 {
-    float Mass;
     Drop* CurrentDropPtr;
     float ForceDownward;
     float Friction;
@@ -53,9 +52,8 @@ TSet<int> DropSystem::Simulate(float TimeDeltaSeconds)
         CurrentDropPtr = Iter.Value;
 
         // Calc Force
-        Mass = CurrentDropPtr->Radius * CurrentDropPtr->Radius * m_Density;
         Friction = CurrentDropPtr->Velocity.Y > 0 ? m_DynamicFriction : m_StaticFriction;
-        ForceDownward = Mass * m_Gravity - Friction;
+        ForceDownward = CurrentDropPtr->GetMass() * m_Gravity - Friction;
 
         // Calc Velocity
         CurrentDropPtr->Velocity.Y += ForceDownward * TimeDeltaSeconds;
@@ -71,9 +69,7 @@ TSet<int> DropSystem::Simulate(float TimeDeltaSeconds)
             FVector2D(0.0f, 1.0f), FVector2D(kAreaIncreaseFactorMin, kAreaIncreaseFactorMax),
             FMath::Pow(FMath::RandRange(0.0f, 1.0f), kAreaIncreaseFactorExp)
         );
-        CurrentDropPtr->Radius = FMath::Sqrt(
-            CurrentDropPtr->Radius * CurrentDropPtr->Radius + AreaGrowed * AreaGrowed
-        );
+        CurrentDropPtr->AdjustArea(AreaGrowed);
 
         // Collect Moved
         if (CurrentDropPtr->Velocity.Y > 0)
@@ -103,12 +99,6 @@ void DropSystem::Kill(const FVector2D& Center, float Radius)
         Kill(ID);
     }
 }
-
-//inline float GetChanceFrame(float ChanceSecond, float DeltaSeconds) {
-//    if (ChanceSecond < 1)
-//        return 1 - FMath::Pow(1 - ChanceSecond, DeltaSeconds);
-//    return ChanceSecond * DeltaSeconds;
-//}
 
 void DropSystem::SplitTrailDrops(float DeltaSeconds, const TSet<int>& MovedIDs)
 {
@@ -141,9 +131,7 @@ void DropSystem::SplitTrailDrops(float DeltaSeconds, const TSet<int>& MovedIDs)
         );
 
         // Make area conservative
-        CurrentDropPtr->Radius = FMath::Sqrt(
-            CurrentDropPtr->Radius * CurrentDropPtr->Radius - Radius * Radius * kAreaLossFactor
-        );
+        CurrentDropPtr->AdjustArea(- Radius * Radius * kAreaLossFactor);
         CurrentDropPtr->Velocity *= kVelocityLossFactor;
     }
 }
@@ -204,9 +192,6 @@ void DropSystem::ProcessOverlaps(const TSet<int>& MovedIDs)
         }
     }
 
-    if (IDPairs.Num())
-        UE_LOG(LogTemp, Log, TEXT("Overlap: %i"), IDPairs.Num());
-
     ActiveTrailDrops(IDPairs);
     MergeDrops(IDPairs);
 }
@@ -230,10 +215,29 @@ void DropSystem::ActiveTrailDrops(const TArray<IDPair>& OverlappedPairs)
 
 void DropSystem::MergeDrops(const TArray<IDPair>& OverlappedPairs)
 {
-    /*for (auto CurrentPair : OverlappedPairs) {
-        SeparateDrops.Remove(CurrentPair.first);
-        SeparateDrops.Remove(CurrentPair.second);
-    }*/
+    for (auto CurrentPair : OverlappedPairs)
+        MergeDrop(CurrentPair.first, CurrentPair.second);
+}
+
+
+void DropSystem::MergeDrop(int ID1, int ID2)
+{
+    UE_LOG(LogTemp, Log, TEXT("Merge Started: %i ? %i"), ID1, ID2);
+    if (!m_Drops.Find(ID1) || !m_Drops.Find(ID2))
+        return;
+    UE_LOG(LogTemp, Log, TEXT("Merge after Find."));
+    if (!m_Drops[ID1]->IsActive() || !m_Drops[ID2]->IsActive())
+        return;
+    UE_LOG(LogTemp, Log, TEXT("Merge after Activiness Check."));
+    if (m_Drops[ID2]->Radius > m_Drops[ID1]->Radius)
+        std::swap(ID1, ID2);
+    
+    float MassOld = m_Drops[ID1]->GetMass();
+    m_Drops[ID1]->AdjustArea(m_Drops[ID2]->Radius * m_Drops[ID2]->Radius);
+    m_Drops[ID1]->Velocity *= MassOld / m_Drops[ID1]->GetMass();
+
+    Kill(ID2);
+    UE_LOG(LogTemp, Log, TEXT("Merged: %i + %i"), ID1, ID2);
 }
 
 void DropSystem::Draw(

@@ -27,7 +27,6 @@ public:
     float m_Gravity = 10.0;
     float m_StaticFriction = 450.0;     // Force that imposed on drops
     float m_DynamicFriction = 450.0;
-    float m_Density = 25.0;
     float m_VelocityScale = 30.0;
     float m_SplitTrailVelocityThreshold = 50.0f;
 
@@ -38,6 +37,7 @@ private:
     void ProcessOverlaps(const TSet<int>& MovedIDs);
     void ActiveTrailDrops(const TArray<IDPair>& OverlappedPairs);
     void MergeDrops(const TArray<IDPair>& OverlappedPairs);
+    void MergeDrop(int ID1, int ID2);
 
     int m_NextID = 0;
 };

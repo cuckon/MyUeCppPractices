@@ -9,9 +9,9 @@
 #endif
 
 
-const float kDropEmitChanceDefault = 0.04f;
-const float kDropEmitRadiusMinDefault = 0.6f;
-const float kDropEmitRadiusMaxDefault = 1.0f;
+const float kDropEmitChanceDefault = 0.01f;
+const float kDropEmitRadiusMinDefault = 0.3f;
+const float kDropEmitRadiusMaxDefault = 0.7f;
 const float kDropEmitRadiusExpDefault = 2.0f;
 const float kDropEmitChanceStrokeEnd = 1.0f;
 const float kDropEmitRadiusMinStrokeEnd = 1.0f;
