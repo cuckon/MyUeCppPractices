@@ -9,10 +9,11 @@
 PRAGMA_OPTION
 
 const float kRadiusAnimationExp = 10.0f;
-const float kSplitChance = 15.0f;
-const float kAreaLossFactor = 0.5f;
+const float kAreaLossFactor = 0.2f;     // Bigger value causes more area loss 
 const float kVelocityLossFactor = 0.5f;
-
+const float kAreaIncreaseFactorMin = 0.02f;    // Bigger value increase the growing speed of marching drops.
+const float kAreaIncreaseFactorMax = 0.06f;
+const float kAreaIncreaseFactorExp = 10.0f;
 
 DropSystem::DropSystem():m_World(nullptr), m_NextID(0)
 {
@@ -40,28 +41,42 @@ void DropSystem::Kill(int ID)
 TSet<int> DropSystem::Simulate(float TimeDeltaSeconds)
 {
     float Mass;
-    Drop* CurrentDrop;
+    Drop* CurrentDropPtr;
     float ForceDownward;
     float Friction;
+    float AreaGrowed;
+    float MarchedDistance;
     TSet<int> MovedIDs;
+    FVector2D MoveVector;
     for (auto& Iter : m_Drops)
     {
-        CurrentDrop = Iter.Value;
+        CurrentDropPtr = Iter.Value;
 
         // Calc Force
-        Mass = CurrentDrop->Radius * CurrentDrop->Radius * m_Density;
-        Friction = CurrentDrop->Velocity.Y > 0 ? m_DynamicFriction : m_StaticFriction;
+        Mass = CurrentDropPtr->Radius * CurrentDropPtr->Radius * m_Density;
+        Friction = CurrentDropPtr->Velocity.Y > 0 ? m_DynamicFriction : m_StaticFriction;
         ForceDownward = Mass * m_Gravity - Friction;
 
         // Calc Velocity
-        CurrentDrop->Velocity.Y += ForceDownward * TimeDeltaSeconds;
-        CurrentDrop->Velocity.Y = FMath::Max(CurrentDrop->Velocity.Y, 0.0f);
+        CurrentDropPtr->Velocity.Y += ForceDownward * TimeDeltaSeconds;
+        CurrentDropPtr->Velocity.Y = FMath::Max(CurrentDropPtr->Velocity.Y, 0.0f);
 
         // Calc Position
-        CurrentDrop->Position += CurrentDrop->Velocity * TimeDeltaSeconds * m_VelocityScale;
+        MoveVector = CurrentDropPtr->Velocity * TimeDeltaSeconds * m_VelocityScale;
+        CurrentDropPtr->Position += MoveVector;
+        CurrentDropPtr->DistanceNoTrail += (MarchedDistance = MoveVector.Size());
+
+        // Increase Radius while marching downward
+        AreaGrowed = MarchedDistance * FMath::GetMappedRangeValueUnclamped(
+            FVector2D(0.0f, 1.0f), FVector2D(kAreaIncreaseFactorMin, kAreaIncreaseFactorMax),
+            FMath::Pow(FMath::RandRange(0.0f, 1.0f), kAreaIncreaseFactorExp)
+        );
+        CurrentDropPtr->Radius = FMath::Sqrt(
+            CurrentDropPtr->Radius * CurrentDropPtr->Radius + AreaGrowed * AreaGrowed
+        );
 
         // Collect Moved
-        if (CurrentDrop->Velocity.Y > 0)
+        if (CurrentDropPtr->Velocity.Y > 0)
             MovedIDs.Add(Iter.Key);
     }
     return MovedIDs;
@@ -89,18 +104,17 @@ void DropSystem::Kill(const FVector2D& Center, float Radius)
     }
 }
 
-inline float GetChanceFrame(float ChanceSecond, float DeltaSeconds) {
-    if (ChanceSecond < 1)
-        return 1 - FMath::Pow(1 - ChanceSecond, DeltaSeconds);
-    return ChanceSecond * DeltaSeconds;
-}
+//inline float GetChanceFrame(float ChanceSecond, float DeltaSeconds) {
+//    if (ChanceSecond < 1)
+//        return 1 - FMath::Pow(1 - ChanceSecond, DeltaSeconds);
+//    return ChanceSecond * DeltaSeconds;
+//}
 
 void DropSystem::SplitTrailDrops(float DeltaSeconds, const TSet<int>& MovedIDs)
 {
     Drop* CurrentDropPtr;
-    float ChanceFrame = GetChanceFrame(kSplitChance, DeltaSeconds);
     float Speed;
-    float SpeedFactor;
+    FVector2D Position;
     for (auto ID : MovedIDs) {
         CurrentDropPtr = m_Drops[ID];
         Speed = CurrentDropPtr->Velocity.Size() * m_VelocityScale;
@@ -108,18 +122,18 @@ void DropSystem::SplitTrailDrops(float DeltaSeconds, const TSet<int>& MovedIDs)
             continue;
         if (!CurrentDropPtr->IsActive())
             continue;
-        SpeedFactor = Speed / m_SplitTrailVelocityThreshold / 10;
 
-        if (FMath::RandRange(0.0f, 1.0f) > (ChanceFrame * SpeedFactor))
+        if (CurrentDropPtr->DistanceNoTrail < CurrentDropPtr->NextTrailDistance)
             continue;
 
-        float Radius = FMath::GetMappedRangeValueUnclamped(
-            FVector2D(0.0f, 1.0f),
-            FVector2D(kDropEmitRadiusMinDefault, kDropEmitRadiusMaxDefault),
-            FMath::Pow(FMath::RandRange(0.0f, 1.0f), kDropEmitRadiusExpDefault)
-        );
+        CurrentDropPtr->ResetTrailDistance();
+
+        float Radius = CurrentDropPtr->Radius * FMath::RandRange(0.3f, 0.5f);
+        Position = CurrentDropPtr->Position + FVector2D(
+            FMath::RandRange(-0.3f, 0.3f), -0.4 
+        ) * CurrentDropPtr->Radius;
         Emit(
-            CurrentDropPtr->Position,
+            Position,
             FVector2D(0.0, 0.0),
             FVector2D(1.0, 2.0),
             Radius,

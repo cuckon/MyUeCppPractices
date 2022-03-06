@@ -12,17 +12,27 @@ public:
     FVector2D Stretch;
     float Radius;
     float BirthTimeSeconds;
-    // bool Mergeable
+    float DistanceNoTrail;
+    float NextTrailDistance;
 
     Drop(const FVector2D &Position, const FVector2D& Velocity, const FVector2D& Stretch,
         float Radius=1.0f, float BirthTimeSeconds=kBirthTimeNotInitialized)
-        : Position(Position), Velocity(Velocity), Stretch(Stretch),
-        Radius(Radius), BirthTimeSeconds(BirthTimeSeconds)
+        : Position(Position)
+        , Velocity(Velocity)
+        , Stretch(Stretch)
+        , Radius(Radius)
+        , BirthTimeSeconds(BirthTimeSeconds)
     {
+        ResetTrailDistance();
     };
 
     bool AreOverlapped(Drop* Another) {
         return (Another->Position - Position).Size() <= (Another->Radius + Radius);
+    }
+
+    void ResetTrailDistance() {
+        DistanceNoTrail = 0;
+        NextTrailDistance = FMath::RandRange(20.0f, 50.0f);
     }
 
     bool IsActive() const {
