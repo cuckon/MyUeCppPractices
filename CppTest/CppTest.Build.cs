@@ -7,7 +7,9 @@ public class CppTest : ModuleRules
 	public CppTest(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-	
+		bEnableUndefinedIdentifierWarnings = false;
+
+
 		PublicDependencyModuleNames.AddRange(new string[] {
 			"Core", "CoreUObject", "Engine", "InputCore", "UMG", "SlateCore", "Slate"
 		});

@@ -1,6 +1,11 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "Winter/GM_Winter.h"
 
+#define STYLUSINPUT_API DLLEXPORT
+
+//#include "StylusInput/Source/StylusInput/Public/IStylusState.h"
+//#include "StylusInput/Source/StylusInput/Public/IStylusInputModule.h"
+//#include "Winter/Stylus.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Canvas.h"
 #include "Kismet/KismetMaterialLibrary.h"
@@ -9,13 +14,13 @@
 
 #include "Common.h"
 
+
 PRAGMA_OPTION
 
 const float kMoveThreshold = 2.5;  // pixel in viewport
 const FVector kPawnPos(-110, 0.0, 33.0); 
 const float kFingerSizeRT = 20;
 const int kBrushSpace = 5; // px
-
 
 AGM_Winter::AGM_Winter()
     :RT_Drops(nullptr),
