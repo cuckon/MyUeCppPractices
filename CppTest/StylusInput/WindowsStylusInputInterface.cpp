@@ -2,13 +2,15 @@
 
 #include "WindowsStylusInputInterface.h"
 #include "WindowsRealTimeStylusPlugin.h"
-#include "Interfaces/IMainFrameModule.h"
+//#include "Interfaces/IMainFrameModule.h"
 
 #include "Framework/Application/SlateApplication.h" 
 
 #if PLATFORM_WINDOWS
 
 #include <ShlObj.h>
+
+DEFINE_LOG_CATEGORY_STATIC(LogStylusInput, Log, All);
 
 class FWindowsStylusInputInterfaceImpl
 {
@@ -174,7 +176,7 @@ FWindowsStylusInputInterfaceImpl::~FWindowsStylusInputInterfaceImpl()
 	}
 }
 
-TSharedPtr<IStylusInputInterfaceInternal> CreateStylusInputInterface()
+TSharedPtr<FWindowsStylusInputInterface> CreateStylusInputInterface()
 {
 	if (!FWindowsPlatformMisc::CoInitialize()) 
 	{

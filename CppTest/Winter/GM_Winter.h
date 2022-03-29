@@ -6,6 +6,8 @@
 #include "GameFramework/GameModeBase.h"
 
 #include "DropSystem.h"
+#include "StylusInput/WindowsStylusInputInterface.h"
+
 
 #include "GM_Winter.generated.h"
 
@@ -63,4 +65,5 @@ private:
     // UMaterialInstanceDynamic* m_M_BrushInstance;
     DropSystem m_DropSystem;
     FVector2D m_RenderTargetSize;
+    TSharedPtr<FWindowsStylusInputInterface> m_StylusInputInterface;
 };

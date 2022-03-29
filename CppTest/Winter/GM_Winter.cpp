@@ -1,11 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "Winter/GM_Winter.h"
 
-#define STYLUSINPUT_API DLLEXPORT
-
-//#include "StylusInput/Source/StylusInput/Public/IStylusState.h"
-//#include "StylusInput/Source/StylusInput/Public/IStylusInputModule.h"
-//#include "Winter/Stylus.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/Canvas.h"
 #include "Kismet/KismetMaterialLibrary.h"
@@ -22,6 +17,8 @@ const FVector kPawnPos(-110, 0.0, 33.0);
 const float kFingerSizeRT = 20;
 const int kBrushSpace = 5; // px
 
+TSharedPtr<FWindowsStylusInputInterface> CreateStylusInputInterface();
+
 AGM_Winter::AGM_Winter()
     :RT_Drops(nullptr),
     RT_Strokes(nullptr),
@@ -32,9 +29,9 @@ AGM_Winter::AGM_Winter()
     m_JustPressed(false)
 {
     PrimaryActorTick.bCanEverTick = true;
+    m_StylusInputInterface = CreateStylusInputInterface();
 
     UE_LOG(LogTemp, Log, TEXT("Setup done."));
-
 }
 
 

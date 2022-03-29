@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Math/Vector2D.h"
+#define STYLUSINPUT_API DLLEXPORT
 
 /**
  * The types of stylus inputs that can be potentially supported by a stylus.
