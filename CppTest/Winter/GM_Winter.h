@@ -61,8 +61,6 @@ private:
     bool m_FingerPressed;
     bool m_JustPressed;
     FVector2D m_LastPosition;  //in viewport local space
-    // FVectoer2D m_SecondLastPosition;
-    // UMaterialInstanceDynamic* m_M_BrushInstance;
     DropSystem m_DropSystem;
     FVector2D m_RenderTargetSize;
     TSharedPtr<FWindowsStylusInputInterface> m_StylusInputInterface;

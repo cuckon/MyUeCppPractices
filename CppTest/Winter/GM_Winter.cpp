@@ -90,6 +90,11 @@ void AGM_Winter::StartPlay()
     // );
     APawn* pawn = UGameplayStatics::GetPlayerPawn(m_World, 0);
     pawn->SetActorLocation(kPawnPos);
+
+
+
+    UE_LOG(LogTemp, Log, TEXT("m_StylusInputInterface->NumInputDevices(): %d"), m_StylusInputInterface->NumInputDevices());
+
 }
 
 
@@ -105,12 +110,47 @@ void AGM_Winter::Tick(float DeltaSeconds)
     );
     FVector2D CurrentFingerPos = UWidgetLayoutLibrary::GetMousePositionOnViewport(m_World);
 
+
+    
     if (m_FingerPressed) {
         bool MovedFarEnough = FVector2D::Distance(CurrentFingerPos, m_LastPosition) > kMoveThreshold;
         if (MovedFarEnough || m_JustPressed) {
             OnMouseMove(CurrentFingerPos);
             m_LastPosition = CurrentFingerPos;
         }
+
+
+        static int Counter = 0;
+        if (Counter % 50 == 0) {
+            
+            if (m_StylusInputInterface.IsValid())
+            {
+                m_StylusInputInterface->Tick();
+
+                for (int DeviceIdx = 0; DeviceIdx < m_StylusInputInterface->NumInputDevices(); ++DeviceIdx)
+                {
+                    IStylusInputDevice* InputDevice = m_StylusInputInterface->GetInputDevice(DeviceIdx);
+                    if (InputDevice->IsDirty())
+                    {
+                        InputDevice->Tick();
+                        UE_LOG(LogTemp, Log,
+                            TEXT("Device %d: %f, %f, %f, %f, %f"),
+                            DeviceIdx,
+                            InputDevice->GetCurrentState().GetPressure(),
+                            InputDevice->GetCurrentState().GetSize().X,
+                            InputDevice->GetCurrentState().GetTwist(),
+                            InputDevice->GetCurrentState().GetZ(),
+                            InputDevice->GetCurrentState().GetPosition().X
+                        );
+                    }
+                }
+            }
+
+            Counter = 0;
+        }
+        Counter++;
+        
+
     }
 
     m_JustPressed = false;
@@ -125,7 +165,7 @@ void AGM_Winter::FingerPressed()
     m_FingerPressed = true;
     m_JustPressed = true;
     m_LastPosition = UWidgetLayoutLibrary::GetMousePositionOnViewport(m_World);
-    // m_SecondLastPosition = m_LastPosition;
+   
 }
 
 

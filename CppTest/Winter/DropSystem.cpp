@@ -227,13 +227,10 @@ void DropSystem::MergeDrops(const TArray<IDPair>& OverlappedPairs)
 
 void DropSystem::MergeDrop(int ID1, int ID2)
 {
-    UE_LOG(LogTemp, Log, TEXT("Merge Started: %i ? %i"), ID1, ID2);
     if (!m_Drops.Find(ID1) || !m_Drops.Find(ID2))
         return;
-    UE_LOG(LogTemp, Log, TEXT("Merge after Find."));
     if (!m_Drops[ID1]->IsActive() || !m_Drops[ID2]->IsActive())
         return;
-    UE_LOG(LogTemp, Log, TEXT("Merge after Activiness Check."));
     if (m_Drops[ID2]->Radius > m_Drops[ID1]->Radius)
         std::swap(ID1, ID2);
     
@@ -242,7 +239,6 @@ void DropSystem::MergeDrop(int ID1, int ID2)
     m_Drops[ID1]->Velocity *= MassOld / m_Drops[ID1]->GetMass();
 
     Kill(ID2);
-    UE_LOG(LogTemp, Log, TEXT("Merged: %i + %i"), ID1, ID2);
 }
 
 void DropSystem::Draw(
