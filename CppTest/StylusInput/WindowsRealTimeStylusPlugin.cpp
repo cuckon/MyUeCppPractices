@@ -3,7 +3,6 @@
 #include "WindowsRealTimeStylusPlugin.h"
 #include "Common.h"
 PRAGMA_OPTION
-
 #if PLATFORM_WINDOWS
 
 HRESULT FWindowsRealTimeStylusPlugin::QueryInterface(const IID& InterfaceID, void** Pointer)
@@ -382,7 +381,6 @@ static float ToDegrees(int Value, const FPacketDescription& Desc)
 void FWindowsRealTimeStylusPlugin::HandlePacket(IRealTimeStylus* InRealTimeStylus, const StylusInfo* StylusInfo, ULONG PacketCount, ULONG PacketBufferLength, LONG* Packets)
 {
 	FTabletContextInfo* TabletContext = FindTabletContext(StylusInfo->tcid);
-	// FTabletContextInfo* TabletContext = &((*TabletContexts)[2]);
 	if (TabletContext == nullptr)
 	{
 		return;
