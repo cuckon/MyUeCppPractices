@@ -44,14 +44,16 @@ public:
     APlayerController* PlayerController;
 
 private:
-    void OnStrokeEnd();
+    void PutBigDrop();
     TSet<int> SimDrops(float DeltaSeconds);
     void DrawDrops(const TSet<int>& MovedIDs);
     void OnMouseMove(const FVector2D& FingerPos);
     void ActivateDrops(const FVector2D& Center, float Radius);
+
     void EmitDrop(
         const FVector2D& Pos_RT, float Chance,
-        float RadiusMin, float RadiusMax, float RadiusExp
+        float RadiusMin, float RadiusMax, float RadiusExp,
+        float BirthTime = kBirthTimeNotInitialized
     );
     void CleanDropsAtPos(const FVector2D& Pos_RT, float Size);
 

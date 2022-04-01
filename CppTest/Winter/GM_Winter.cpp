@@ -16,6 +16,7 @@ const float kMoveThreshold = 2.5;  // pixel in viewport
 const FVector kPawnPos(-110, 0.0, 33.0); 
 const float kFingerSizeRT = 20;
 const int kBrushSpace = 5; // px
+const float kDefaultPressure = 0.3;
 
 TSharedPtr<FWindowsStylusInputInterface> CreateStylusInputInterface();
 
@@ -25,7 +26,8 @@ AGM_Winter::AGM_Winter()
     RT_MovedDrops(nullptr),
     M_Brush(nullptr),
     T_Raindrop(nullptr),
-    m_StylusPressure(0.55),
+    m_StylusPressure(kDefaultPressure),
+    m_LastStylusPressure(kDefaultPressure),
     m_FingerPressed(false),
     m_JustPressed(false)
 {
@@ -66,6 +68,9 @@ void AGM_Winter::StartPlay()
     );
     ControllerComponent->BindKey(
         EKeys::LeftMouseButton, IE_Released, this, &AGM_Winter::FingerReleased
+    );
+    ControllerComponent->BindKey(
+        EKeys::RightMouseButton, IE_Pressed, this, &AGM_Winter::PutBigDrop
     );
     PlayerController->bShowMouseCursor = true;
 
@@ -142,8 +147,11 @@ void AGM_Winter::TickStylusInputs()
 
                 // Just let the last stylus' pressure be the one we will query.
                 // In most case there's only one or no stylus.
-                m_LastStylusPressure = m_StylusPressure;
-                m_StylusPressure = InputDevice->GetCurrentState().GetPressure();
+                if (InputDevice->GetCurrentState().IsStylusDown() && 
+                    InputDevice->GetCurrentState().GetPressure() > 0) {
+                    m_LastStylusPressure = m_StylusPressure;
+                    m_StylusPressure = InputDevice->GetCurrentState().GetPressure();
+                }
             }
         }
     }
@@ -163,21 +171,20 @@ void AGM_Winter::FingerReleased()
 {
     m_FingerPressed = false;
 
-    OnStrokeEnd();
     ActivateDrops(FVector2D(-100.0f, 0.0f), 0.0f);
 }
 
 
-void AGM_Winter::OnStrokeEnd()
+void AGM_Winter::PutBigDrop()
 {
-    return;
 
     FVector2D Pos = UWidgetLayoutLibrary::GetMousePositionOnViewport(m_World);
     FVector2D Pos_RT = Pos * m_RenderTargetSize * m_ViewFactor;
     EmitDrop(
         Pos_RT, kDropEmitChanceStrokeEnd,
         kDropEmitRadiusMinStrokeEnd, kDropEmitRadiusMaxStrokeEnd,
-        kDropEmitRadiusExpStrokeEnd
+        kDropEmitRadiusExpStrokeEnd,
+        m_World->GetTimeSeconds()
     );
 }
 
@@ -263,7 +270,8 @@ void AGM_Winter::ActivateDrops(const FVector2D& Center, float Radius)
 }
 
 void AGM_Winter::EmitDrop(
-    const FVector2D& Pos_RT, float Chance, float RadiusMin, float RadiusMax, float RadiusExp
+    const FVector2D& Pos_RT, float Chance, float RadiusMin, float RadiusMax, float RadiusExp,
+    float BirthTime
 )
 {
     float Dice = FMath::RandRange(0.0f, 1.0f);
@@ -276,7 +284,7 @@ void AGM_Winter::EmitDrop(
     );
 
     m_DropSystem.Emit(
-        Pos_RT, FVector2D(0.0, 0.0), FVector2D(0.0, 0.0), Radius, kBirthTimeNotInitialized
+        Pos_RT, FVector2D(0.0, 0.0), FVector2D(0.0, 0.0), Radius, BirthTime
     );
 }
 
