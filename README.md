@@ -12,9 +12,10 @@ TODO:
 - [x] Bugfix: Noncontinuous strokes when slow.
 - [x] Growing size when dripping down.
 - [x] Stretch effect.
-- [ ] Sensitive to stylus pressure.
+- [x] Sensitive to stylus pressure.
 - [ ] Blured glass to create the defocus effect
 
 And might be done if I get time:
 - [ ] Grid based overlap detection.
 - [ ] Transparency control of drops.
+- [ ] Use WinTab API instead of Pen API.

@@ -25,6 +25,7 @@ AGM_Winter::AGM_Winter()
     RT_MovedDrops(nullptr),
     M_Brush(nullptr),
     T_Raindrop(nullptr),
+    m_StylusPressure(0.55),
     m_FingerPressed(false),
     m_JustPressed(false)
 {
@@ -100,6 +101,8 @@ void AGM_Winter::StartPlay()
 
 void AGM_Winter::Tick(float DeltaSeconds)
 {
+    TickStylusInputs();
+
     int SizeX, SizeY;
     PlayerController->GetViewportSize(SizeX, SizeY);
     m_ViewportRatio = static_cast<float>(SizeX) / SizeY;    
@@ -110,53 +113,40 @@ void AGM_Winter::Tick(float DeltaSeconds)
     );
     FVector2D CurrentFingerPos = UWidgetLayoutLibrary::GetMousePositionOnViewport(m_World);
 
-
-    
     if (m_FingerPressed) {
         bool MovedFarEnough = FVector2D::Distance(CurrentFingerPos, m_LastPosition) > kMoveThreshold;
         if (MovedFarEnough || m_JustPressed) {
             OnMouseMove(CurrentFingerPos);
             m_LastPosition = CurrentFingerPos;
         }
-
-
-        static int Counter = 0;
-        if (Counter % 50 == 0) {
-            
-            if (m_StylusInputInterface.IsValid())
-            {
-                m_StylusInputInterface->Tick();
-
-                for (int DeviceIdx = 0; DeviceIdx < m_StylusInputInterface->NumInputDevices(); ++DeviceIdx)
-                {
-                    IStylusInputDevice* InputDevice = m_StylusInputInterface->GetInputDevice(DeviceIdx);
-                    if (InputDevice->IsDirty())
-                    {
-                        InputDevice->Tick();
-                        UE_LOG(LogTemp, Log,
-                            TEXT("Device %d: %f, %f, %f, %f, %f"),
-                            DeviceIdx,
-                            InputDevice->GetCurrentState().GetPressure(),
-                            InputDevice->GetCurrentState().GetSize().X,
-                            InputDevice->GetCurrentState().GetTwist(),
-                            InputDevice->GetCurrentState().GetZ(),
-                            InputDevice->GetCurrentState().GetPosition().X
-                        );
-                    }
-                }
-            }
-
-            Counter = 0;
-        }
-        Counter++;
-        
-
     }
 
     m_JustPressed = false;
 
     TSet<int> MovedIDs = SimDrops(DeltaSeconds);
     DrawDrops(MovedIDs);
+}
+
+void AGM_Winter::TickStylusInputs()
+{
+    if (m_StylusInputInterface.IsValid())
+    {
+        m_StylusInputInterface->Tick();
+
+        for (int DeviceIdx = 0; DeviceIdx < m_StylusInputInterface->NumInputDevices(); ++DeviceIdx)
+        {
+            IStylusInputDevice* InputDevice = m_StylusInputInterface->GetInputDevice(DeviceIdx);
+            if (InputDevice->IsDirty())
+            {
+                InputDevice->Tick();
+
+                // Just let the last stylus' pressure be the one we will query.
+                // In most case there's only one or no stylus.
+                m_LastStylusPressure = m_StylusPressure;
+                m_StylusPressure = InputDevice->GetCurrentState().GetPressure();
+            }
+        }
+    }
 }
 
 
@@ -180,6 +170,8 @@ void AGM_Winter::FingerReleased()
 
 void AGM_Winter::OnStrokeEnd()
 {
+    return;
+
     FVector2D Pos = UWidgetLayoutLibrary::GetMousePositionOnViewport(m_World);
     FVector2D Pos_RT = Pos * m_RenderTargetSize * m_ViewFactor;
     EmitDrop(
@@ -230,6 +222,7 @@ void AGM_Winter::OnMouseMove(const FVector2D& FingerPos)
     FVector2D ScreenPos;
     FVector2D Size2D_RT;
     float StepDistance = MovedLength / NSteps;
+    float Pressure, SizePressureFactor;
     FVector2D StepVec = Diff.GetSafeNormal() * StepDistance;
     for (int i = 1; i <= NSteps + 1; ++i) {
         DrawPos_ViewportSpace = i * StepVec + m_LastPosition;
@@ -238,7 +231,13 @@ void AGM_Winter::OnMouseMove(const FVector2D& FingerPos)
             DrawPos_RTSpace, kDropEmitChanceDefault, kDropEmitRadiusMinDefault,
             kDropEmitRadiusMaxDefault, kDropEmitRadiusExpDefault
         );
-        Size2D_RT = FVector2D(kFingerSizeRT, kFingerSizeRT * m_ViewportRatio);
+        Pressure = FMath::Lerp(m_LastStylusPressure, m_StylusPressure, (float)(i) / NSteps);
+        SizePressureFactor = 0.3 + FMath::Pow(Pressure, 0.7) * 1.5;
+
+        Size2D_RT = FVector2D(
+            kFingerSizeRT * SizePressureFactor,
+            kFingerSizeRT * m_ViewportRatio * SizePressureFactor
+        );
         ScreenPos = DrawPos_RTSpace - Size2D_RT * 0.5;
 
         Canvas->K2_DrawMaterial(

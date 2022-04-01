@@ -37,6 +37,7 @@ public:
 
     void StartPlay() override;
     void Tick(float DeltaSeconds) override;
+    void TickStylusInputs();
     void FingerPressed();
     void FingerReleased();
 
@@ -57,10 +58,12 @@ private:
     UWorld* m_World;
     float m_ViewportScale;
     float m_ViewportRatio;
+    float m_StylusPressure;
     FVector2D m_ViewFactor;  // ViewportScale / ViewportSize, updated every tick.
     bool m_FingerPressed;
     bool m_JustPressed;
     FVector2D m_LastPosition;  //in viewport local space
+    float m_LastStylusPressure;
     DropSystem m_DropSystem;
     FVector2D m_RenderTargetSize;
     TSharedPtr<FWindowsStylusInputInterface> m_StylusInputInterface;
