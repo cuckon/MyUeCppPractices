@@ -18,6 +18,7 @@ const float kAreaIncreaseFactorMin = 0.015f;    // Bigger value increase the gro
 const float kAreaIncreaseFactorMax = 0.35f;
 const float kAreaIncreaseFactorExp = 6.0f;
 const float kStretchVelocityFactor = 0.1f;
+const float kDropShrinkingSeconds = 1.0f; // Second
 
 
 DropSystem::DropSystem():m_World(nullptr), m_NextID(0)
@@ -80,7 +81,7 @@ TSet<int> DropSystem::Simulate(float TimeDeltaSeconds)
         if (CurrentDropPtr->Velocity.Y > 0)
             MovedIDs.Add(Iter.Key);
     }
-    return MovedIDs;
+    return MoveTemp(MovedIDs);
 }
 
 void DropSystem::Kill(const FVector2D& Center, float Radius)
@@ -244,7 +245,7 @@ void DropSystem::MergeDrop(int ID1, int ID2)
 void DropSystem::Draw(
     UTextureRenderTarget2D* RT_Drops,
     UTextureRenderTarget2D* RT_MovedDrops, UTexture* T_Raindrop,
-    float ViewPortRatio, const TSet<int>& MovedIDs
+    float ViewPortRatio, const TSet<int>& IDs
     )
 {
     check(m_World);
@@ -271,7 +272,7 @@ void DropSystem::Draw(
             continue;
         NormalLife = FMath::Clamp(
             CurrentTime - CurrentDrop->BirthTimeSeconds,
-            0.0f, 1.0f
+            0.0f, kDropShrinkingSeconds
         ); // From 0 to 1
 
         // From 1 to 0
@@ -302,7 +303,7 @@ void DropSystem::Draw(
         m_World, RT_MovedDrops, Canvas, CanvasSize, Context
     );
 
-    for (auto ID : MovedIDs) {
+    for (auto ID : IDs) {
         if (!m_Drops[ID]->IsActive())
             continue;
 
@@ -320,6 +321,19 @@ void DropSystem::Draw(
 
     }
     UKismetRenderingLibrary::EndDrawCanvasToRenderTarget(m_World, Context);
+}
+
+TSet<int> DropSystem::GetShrinkingIDs() const
+{
+    TSet<int> Result;
+    float GameTime = m_World->GetTimeSeconds();
+    float Age;
+    for (auto Iter : m_Drops) {
+        Age = GameTime - Iter.Value->BirthTimeSeconds;
+        if (Age >= 0 && Age < kDropShrinkingSeconds)
+            Result.Add(Iter.Key);
+    }
+    return MoveTemp(Result);
 }
 
 void DropSystem::MarkDropsOutsideFinger(const FVector2D& Center, float Radius)

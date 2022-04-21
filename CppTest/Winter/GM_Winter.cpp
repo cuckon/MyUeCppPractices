@@ -163,9 +163,7 @@ void AGM_Winter::FingerPressed()
     m_FingerPressed = true;
     m_JustPressed = true;
     m_LastPosition = UWidgetLayoutLibrary::GetMousePositionOnViewport(m_World);
-   
 }
-
 
 void AGM_Winter::FingerReleased()
 {
@@ -174,10 +172,8 @@ void AGM_Winter::FingerReleased()
     ActivateDrops(FVector2D(-100.0f, 0.0f), 0.0f);
 }
 
-
 void AGM_Winter::PutBigDrop()
 {
-
     FVector2D Pos = UWidgetLayoutLibrary::GetMousePositionOnViewport(m_World);
     FVector2D Pos_RT = Pos * m_RenderTargetSize * m_ViewFactor;
     EmitDrop(
@@ -197,8 +193,10 @@ TSet<int> AGM_Winter::SimDrops(float DeltaSeconds)
 
 void AGM_Winter::DrawDrops(const TSet<int>& MovedIDs)
 {
+    TSet<int> ShrinkingIDs = m_DropSystem.GetShrinkingIDs();
     m_DropSystem.Draw(
-        RT_Drops, RT_MovedDrops, T_Raindrop, m_ViewportRatio, MovedIDs
+        RT_Drops, RT_MovedDrops, T_Raindrop, m_ViewportRatio,
+        MovedIDs.Union(ShrinkingIDs)
     );
 }
 

@@ -15,11 +15,12 @@ public:
     void Kill(int ID);
     void Draw(UTextureRenderTarget2D* RT_Drops,
         UTextureRenderTarget2D* RT_MovedDrops, UTexture* T_Raindrop,
-        float ViewPortRatio, const TSet<int>& MovedIDs
+        float ViewPortRatio, const TSet<int>& IDs
     );
     void MarkDropsOutsideFinger(const FVector2D& Center, float Radius);
     void Kill(const FVector2D& Center, float Radius);
     TSet<int> Tick(float TimeDeltaSeconds, const FVector2D& ClipSize);
+    TSet<int> GetShrinkingIDs() const;
 
     TMap<int, Drop*> m_Drops;
     float m_RadiusRenderFactor = 1.0f;  // For compensating the texture alpha margin
